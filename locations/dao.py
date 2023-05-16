@@ -45,26 +45,30 @@ def get_predicted_date_by_invoices(invoices: List) -> List:
     return predicted_results
 
 @timing
-def api_call():
+def api_call() -> List:
     """
-    В качестве ответа должен выдаваться повагонный список из сервиса get_current_dislocation 
+    В качестве ответа должен выдаваться повагонный список из сервиса get_current_dislocation
     с обновленной датой прибытия вагона из сервиса get_predicted_dates
     только по вагоном, у которых она отсутствует
     """
     locations = get_current_dislocation()
+
     # Получить список уникальных накладных из текущей дислокации только по тем вагонам,
     # где arrivale_date = None
-    invoices = []
+    none_dates_by_invoices = {}
+    for i, location in enumerate(locations):
+        if location["arrivale_date"] is None:
+            none_dates_by_invoices[location['invoice']] = none_dates_by_invoices.get(
+                location['invoice'], []
+            ) + [i]
+
+    invoices = list(none_dates_by_invoices.keys())
     predicted_data = get_predicted_date_by_invoices(invoices)
 
     # Обновить оригинальный список вагонов данными, которые прислал сервис get_predicted_dates().
-    # Заменить вагоны, где arrivale_date = None на соответствующее поле predicted_date.    
+    # Заменить вагоны, где arrivale_date = None на соответствующее поле predicted_date.
+    for invoice in predicted_data:
+        for location_ind in none_dates_by_invoices[invoice["invoice"]]:
+            locations[location_ind]["arrivale_date"] = invoice["predicted_date"]
 
-    
-
-
-
-    
-
-
-
+    return locations
